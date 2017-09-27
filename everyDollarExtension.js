@@ -150,7 +150,7 @@ function updateDisplay(htmlObject, classNames = "") {
 }
 
 //Displays a spinner
-function startSpinner() {
+function startSpinner(target) {
     var opts = {
         lines: 13 // The number of lines to draw
         , length: 14 // The length of each line
@@ -173,8 +173,9 @@ function startSpinner() {
         , hwaccel: false // Whether to use hardware acceleration
         , position: 'absolute' // Element positioning
     }
-    var spinner = new Spinner().spin();
-    updateDisplay(spinner.el);
+    
+    var spinner = new Spinner(opts).spin();
+    target.replaceChild(spinner.el, target.firstChild)
 }
 
 //Gets the first account balance
@@ -189,11 +190,20 @@ function getAccountBalance() {
     return fltBalance;
 }
 
+//Updates the balances
 function updateBalances(){
-    closeModal();
-    setTimeout(getRemaining(balances), 0);
-    displayModal();
-    startSpinner();
+    debugger;
+    var valElements = document.getElementsByClassName("modal-body");
+    //var valElements = document.getElementsByClassName("BankAccount-balance");
+    for (var ndx = 0; ndx < valElements.length; ndx++){
+        startSpinner(valElements[ndx]);
+    }
+    
+    setTimeout(function() {
+        closeModal();
+        getRemaining(balances)
+        displayModal();
+    }, 0);
 }
 
 //Closes the modal window
