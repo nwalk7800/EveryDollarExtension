@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+    "name": "EveryDollar Reconcile 0.3",
+    "description": "Displays your budget balance at the top of the page to compare with your bank balance.",
+    "version": "0.3",
+    "background" : {
+        "scripts" : [
+            "background.js"
+        ]
+    },
+    "page_action": {
+        "default_icon": "icon.png",
+        "default_title": "EveryDollar Reconcile 0.3"
+    },
+    "permissions": [
+        "activeTab",
+        "declarativeContent"
+    ],
+    "content_scripts": [
+        {
+            "run_at": "document_end",
+            "matches": [
+                "https://www.everydollar.com/*"
+            ],
+            "js": [
+                "spin.min.js",
+                "everyDollarExtension.js"
+            ]
+        }
+    ]
+}
