@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
-    "name": "EveryDollar Reconcile 0.5",
-    "description": "Displays your budget balance at the top of the page to compare with your bank balance.",
-    "version": "0.5",
+    "name": "EveryDollar Reconcile 0.6.4",
+    "description": "Adds a reconcile icon to the icon tray to show some useful reconciliation information.",
+    "version": "0.6.4",
     "background" : {
         "scripts" : [
             "background.js"
@@ -10,7 +10,7 @@
     },
     "page_action": {
         "default_icon": "icon.png",
-        "default_title": "EveryDollar Reconcile 0.5"
+        "default_title": "EveryDollar Reconcile 0.6.4"
     },
     "permissions": [
         "activeTab",

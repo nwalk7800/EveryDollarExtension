@@ -44,7 +44,16 @@ var strModal = `
                             <div class="BankAccount-name">
                                 EveryDollar Balance
                                 <span class="BankAccount-expander"></span></div>
-                                <div class="BankAccount-balance"><span class="money undefined{6}" data-text="{2}.{3}"><span class="money-symbol">$</span><span class="money-integer">{2}</span><span class="money-decimal">.</span><span class="money-fractional">{3}</span></span>
+                                <div class="BankAccount-balance"><span class="money undefined{2}" data-text="{4}.{5}"><span class="money-sign">{3}</span><span class="money-symbol">$</span><span class="money-integer">{4}</span><span class="money-decimal">.</span><span class="money-fractional">{5}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="BankAccount">
+                        <div class="BankAccount-descriptionLine">
+                            <div class="BankAccount-name">
+                                Untracked Balance
+                                <span class="BankAccount-expander"></span></div>
+                                <div class="BankAccount-balance"><span class="money undefined{6}" data-text="{8}.{9}"><span class="money-sign">{7}</span><span class="money-symbol">$</span><span class="money-integer">{8}</span><span class="money-decimal">.</span><span class="money-fractional">{9}</span></span>
                             </div>
                         </div>
                     </div>
@@ -53,7 +62,7 @@ var strModal = `
                             <div class="BankAccount-name">
                                 Remaining Budget
                                 <span class="BankAccount-expander"></span></div>
-                                <div class="BankAccount-balance"><span class="money undefined" data-text="{4}.{5}"><span class="money-symbol">$</span><span class="money-integer">{4}</span><span class="money-decimal">.</span><span class="money-fractional">{5}</span></span>
+                                <div class="BankAccount-balance"><span class="money undefined" data-text="{10}.{11}"><span class="money-symbol">$</span><span class="money-integer">{10}</span><span class="money-decimal">.</span><span class="money-fractional">{11}</span></span>
                             </div>
                         </div>
                     </div>
@@ -63,19 +72,28 @@ var strModal = `
     </div>
 </div>
 </div>
-`
+`;
 var balances = {
+    //current bank balance as reported by the bank
     bankBalance: 0,
+    //sum of remaining balances from all budget lines
     remainingBalance: 0,
-    nonFundRemaining: 0
+    //sum of remaining balance from all budget lines that aren't funds
+    //This is significant because it doesn't carry over to the next month
+    nonFundRemaining: 0,
+    //sum of transactions which have not yet been categorized
+    unTrackedBalance: 0
 };
 
 //Goes through each fund and calculates the balance of all budgets
 function getRemaining(balances) {
+    debugger;
     balances.remainingBalance = 0;
     balances.nonFundRemaining = 0;
+    balances.unTrackedBalance = 0;
     var expenseRemainingElements;
 
+    //Start by subtracting the expected incomes
     var incomeGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--income");
     for (var income = 0; income < incomeGroup.length; income++) {
         incomePlannedElements = incomeGroup[income].getElementsByClassName("input--inline--budget--sm no-wrap text--right");
@@ -84,30 +102,43 @@ function getRemaining(balances) {
         }
     }
 
+    //Add recieved incomes, this should result in 0 remainingBalance at the end of the month
     var incomeReceivedElements = document.getElementsByClassName("money BudgetItem-secondColumn money--received");
-    for (var income = 0; income < incomeReceivedElements.length; income++) {
+    for (income = 0; income < incomeReceivedElements.length; income++) {
         balances.remainingBalance += parseFloat(incomeReceivedElements[income].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
     }
-
-    var leftToBudget = document.getElementsByClassName("money AmountBudgeted-amount")[0];
-    if (leftToBudget) {
-        balances.remainingBalance += parseFloat(leftToBudget.getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
+    
+    //Grab the amount left to budget from under the income card
+    var remainingString = document.evaluate('//div[@class="AmountBudgeted"]//span[@class="money undefined"]/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+    if (remainingString != "") {
+        balances.remainingBalance += parseFloat(remainingString.replace(/[^0-9.-]+/g, ''));
     }
 
+    //Loop through all the budget lines and add the balances to remainingBalance
     var expenseGroups = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--expense");
     for (var expense = 0; expense < expenseGroups.length; expense++) {
         expenseRemainingElements = expenseGroups[expense].getElementsByClassName("money BudgetItem-secondColumn money--remaining");
         for (var ndx = 0; ndx < expenseRemainingElements.length; ndx++) {
-            expenseRemainingElements[ndx].parentElement.parentElement.click();
-            balances.remainingBalance += parseFloat(document.evaluate('//div[@class="card"]/div/div[last()]/div[last()]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
-            
-            if (document.evaluate('//div[@class="BudgetItemDetails-fundHeading"]/span', document, null, XPathResult.STRING_TYPE, null).stringValue == 'Fund')
+            //expenseRemainingElements[ndx].parentElement.parentElement.click();
+            if (document.evaluate('//div[@class="BudgetItemDetails-digestRowAmount BudgetItemDetails-digestRow--remaining"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue == "")
             {
-                balances.nonFundRemaining += parseFloat(document.evaluate('//div[@class="BudgetItemDetails-digestRowAmount BudgetItemDetails-digestRow--remaining"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
+                //document.evaluate('//div[@class="BudgetItemDetails-fund"]/div/h4/img', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue.click();
+                //planned = parseFloat(document.evaluate('//div[@class="BudgetItemDetails-fund"]//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--amountBudgeted"]/span/@data-text', document, null, XPathResult.STRING_TYPE).stringValue.replace(/[^0-9.-]+/g, ''));
+                //spent = parseFloat(document.evaluate('//div[@class="BudgetItemDetails-fund"]//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--spent"]/span/@data-text', document, null, XPathResult.STRING_TYPE).stringValue.replace(/[^0-9.-]+/g, ''));
+                //balances.remainingBalance += (planned + spent);
+                balances.remainingBalance += parseFloat(expenseRemainingElements[ndx].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
+            }
+            else
+            {
+                balances.nonFundRemaining += parseFloat(expenseRemainingElements[ndx].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
+                //balances.nonFundRemaining += parseFloat(document.evaluate('//div[@class="BudgetItemDetails-digestRowAmount BudgetItemDetails-digestRow--remaining"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
             }
         }
     }
+    //Add the nonFundRemaining to the remainingBalance since it's also part of the balance
+    balances.remainingBalance += balances.nonFundRemaining;
 
+    //Add the debt items as well, they're formatting is weird so I have to do math
     var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt Budget-budgetGroup--debtShowBalance");
     for (var debt = 0; debt < debtGroup.length; debt++) {
         debtRows = debtGroup[debt].getElementsByClassName("BudgetItemRow");
@@ -118,10 +149,24 @@ function getRemaining(balances) {
         }
     }
 
-    document.getElementsByClassName("svg-times")[0].click();
-
+    //Get the total of untracked transactions
+    document.getElementById("IconTray_transactions").click();
+    document.getElementById("unallocated").click();
+    var unTrackedIterator = document.evaluate('//div[contains(@class, "ui-item--card transaction-card transaction-card--unallocated")]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+    var unTracked = unTrackedIterator.iterateNext();
+    while (unTracked) {
+        balances.unTrackedBalance += parseFloat(unTracked.value.replace(/[^0-9.-]+/g, ''));
+        unTracked = unTrackedIterator.iterateNext();
+    }
+    
+    var closeButtons = document.getElementsByClassName("CloseIcon");
+    //while (closeButtons.length > 0)
+    closeButtons[0].parentElement.click();
+    closeButtons[0].parentElement.click();
+    
     balances.nonFundRemaining = parseFloat(balances.nonFundRemaining.toFixed(2));
     balances.remainingBalance = parseFloat(balances.remainingBalance.toFixed(2));
+    balances.unTrackedBalance = parseFloat(balances.unTrackedBalance.toFixed(2));
     balances.bankBalance = getAccountBalance();
 }
 
@@ -172,10 +217,10 @@ function startSpinner(target) {
         , shadow: false // Whether to render a shadow
         , hwaccel: false // Whether to use hardware acceleration
         , position: 'absolute' // Element positioning
-    }
+    };
     
     var spinner = new Spinner(opts).spin();
-    target.replaceChild(spinner.el, target.firstChild)
+    target.replaceChild(spinner.el, target.firstChild);
 }
 
 //Gets the first account balance
@@ -192,7 +237,6 @@ function getAccountBalance() {
 
 //Updates the balances
 function updateBalances(){
-    debugger;
     var valElements = document.getElementsByClassName("modal-body");
     //var valElements = document.getElementsByClassName("BankAccount-balance");
     for (var ndx = 0; ndx < valElements.length; ndx++){
@@ -201,39 +245,42 @@ function updateBalances(){
     
     setTimeout(function() {
         closeModal();
-        getRemaining(balances)
+        getRemaining(balances);
         displayModal();
     }, 0);
 }
 
 //Closes the modal window
 function closeModal(){
-    debugger;
     var reactNode = document.getElementsByClassName("ReactModalPortal")[0];
     reactNode.removeChild(reactNode.lastChild);
 }
 
 //Displays the modal window with balance information
 function displayModal(){
-    debugger;
     var strClass;
-    if (balances.bankBalance == balances.remainingBalance){
+    var strSign;
+    if (balances.bankBalance == (balances.remainingBalance + balances.unTrackedBalance).toFixed(2)){
         strClass = " money--remaining";
     }
     else{
         strClass = " money--danger";
     }
-
     modalNode = document.createElement("div");
-    modalNode.innerHTML = strModal.format(Math.floor(balances.bankBalance), Math.round((balances.bankBalance % 1) * 100), Math.floor(balances.remainingBalance), Math.round((balances.remainingBalance % 1) * 100), Math.floor(balances.nonFundRemaining), Math.round((balances.nonFundRemaining % 1) * 100), strClass);
+    modalNode.innerHTML = strModal.format(
+        Math.trunc(balances.bankBalance), balances.bankBalance.toFixed(2).slice(-2),
+        strClass, balances.remainingBalance < 0 ? "-" : "", Math.trunc(Math.abs(balances.remainingBalance)), balances.remainingBalance.toFixed(2).slice(-2),
+        "", balances.unTrackedBalance < 0 ? "-" : "", Math.trunc(Math.abs(balances.unTrackedBalance)), balances.unTrackedBalance.toFixed(2).slice(-2),
+        Math.trunc(balances.nonFundRemaining), balances.nonFundRemaining.toFixed(2).slice(-2)
+        );
 
     var reactNode = document.getElementsByClassName("ReactModalPortal")[0];
     reactNode.appendChild(modalNode);
 
-    var closeButton = document.getElementById("Modal_close")
+    var closeButton = document.getElementById("Modal_close");
     closeButton.addEventListener("click", closeModal);
 
-    var refreshButton = document.getElementById("modalRefreshButton")
+    var refreshButton = document.getElementById("modalRefreshButton");
     refreshButton.addEventListener("click", updateBalances);
 }
 
