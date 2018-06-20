@@ -1,6 +1,6 @@
 {
     "manifest_version": 2,
-    "name": "EveryDollar Reconcile 0.6.4",
+    "name": "EveryDollar Reconcile",
     "description": "Adds a reconcile icon to the icon tray to show some useful reconciliation information.",
     "version": "0.6.4",
     "background" : {
@@ -10,7 +10,7 @@
     },
     "page_action": {
         "default_icon": "icon.png",
-        "default_title": "EveryDollar Reconcile 0.6.4"
+        "default_title": "EveryDollar Reconcile"
     },
     "permissions": [
         "activeTab",
