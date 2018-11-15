@@ -117,26 +117,15 @@ function getRemaining(balances) {
     //Loop through all the budget lines and add the balances to remainingBalance
     var expenseGroups = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--expense");
     for (var expense = 0; expense < expenseGroups.length; expense++) {
-        expenseRemainingElements = expenseGroups[expense].getElementsByClassName("money BudgetItem-secondColumn money--remaining");
+        expenseRemainingElements = expenseGroups[expense].getElementsByClassName("BudgetItemRow-content BudgetItemRow--remainingAllocationPreview");
         for (var ndx = 0; ndx < expenseRemainingElements.length; ndx++) {
-            //expenseRemainingElements[ndx].parentElement.parentElement.click();
-            if (document.evaluate('//div[@class="BudgetItemDetails-digestRowAmount BudgetItemDetails-digestRow--remaining"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue == "")
+            balances.remainingBalance += parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
+            if (expenseRemainingElements[ndx].getElementsByTagName("img").length == 0)
             {
-                //document.evaluate('//div[@class="BudgetItemDetails-fund"]/div/h4/img', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue.click();
-                //planned = parseFloat(document.evaluate('//div[@class="BudgetItemDetails-fund"]//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--amountBudgeted"]/span/@data-text', document, null, XPathResult.STRING_TYPE).stringValue.replace(/[^0-9.-]+/g, ''));
-                //spent = parseFloat(document.evaluate('//div[@class="BudgetItemDetails-fund"]//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--spent"]/span/@data-text', document, null, XPathResult.STRING_TYPE).stringValue.replace(/[^0-9.-]+/g, ''));
-                //balances.remainingBalance += (planned + spent);
-                balances.remainingBalance += parseFloat(expenseRemainingElements[ndx].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
-            }
-            else
-            {
-                balances.nonFundRemaining += parseFloat(expenseRemainingElements[ndx].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
-                //balances.nonFundRemaining += parseFloat(document.evaluate('//div[@class="BudgetItemDetails-digestRowAmount BudgetItemDetails-digestRow--remaining"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
+                balances.nonFundRemaining += parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
             }
         }
     }
-    //Add the nonFundRemaining to the remainingBalance since it's also part of the balance
-    balances.remainingBalance += balances.nonFundRemaining;
 
     //Add the debt items as well, they're formatting is weird so I have to do math
     var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt Budget-budgetGroup--debtShowBalance");
@@ -286,31 +275,42 @@ function displayModal(){
 
 //Adds the plugin button to the top of the page
 function insertButton() {
-    var buttonNode;
+    if (!pluginButton) {
+        pluginButton = document.createElement("div");
+        pluginButton.innerHTML = strButton;
 
-    buttonNode = document.createElement("div");
-    buttonNode.innerHTML = strButton;
-
-    buttonNode.setAttribute("id", "pluginButton");
-    buttonNode.addEventListener("click", displayModal);
+        pluginButton.setAttribute("id", "pluginButton");
+        pluginButton.addEventListener("click", displayModal);
+    }
 
     parentNode = document.getElementsByClassName("ui-app-icon-tray IconTray")[0];
     beforeNode = document.getElementsByClassName("IconTray-item IconTray-item--accounts")[0];
-    parentNode.insertBefore(buttonNode, beforeNode);
+    parentNode.insertBefore(pluginButton, beforeNode);
 }
+
+var pluginButton;
 
 //Main function is called on page load or button click
 function main(evt) {
-    //startSpinner();
-    //setTimeout(insertButton, 0);
     insertButton();
     setTimeout(getRemaining(balances), 0);
 }
 
 //Event is fired when the page is finished loading
 var checkExist = setInterval(function () {
-    if (document.getElementsByClassName("AccountIcon").length > 0) {
+    
+    //Determine when the paged is finished loading if the tray exists
+    accountIcon = document.getElementsByClassName("AccountIcon");
+    if (accountIcon.length > 0) {
         main();
         clearInterval(checkExist);
+
+        //The button is removed when the month is changed so recreate it
+        var observer = new MutationObserver(function(mutations) {
+            if (!document.body.contains(pluginButton) && document.body.contains(accountIcon[0])) {
+                main();
+            }
+        });
+        observer.observe(document.body, {childList: true});
     }
 }, 100);
