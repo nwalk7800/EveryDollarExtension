@@ -2,7 +2,6 @@
 //This script is injected into the pageAction
 //Calculates the balance of all the budgets and displays it at the top of the page
 //I find this useful for comparing to my actual bank balance
-
 String.prototype.format = function() {
     var s = this,
         i = arguments.length;
@@ -40,21 +39,48 @@ var strModal = `
                         </div>
                     </div>
                     <div class="BankAccount">
-                        <div class="BankAccount-descriptionLine">
-                            <div class="BankAccount-name">
-                                EveryDollar Balance
-                                <span class="BankAccount-expander"></span></div>
-                                <div class="BankAccount-balance"><span class="money undefined{6}" data-text="{2}.{3}"><span class="money-symbol">$</span><span class="money-integer">{2}</span><span class="money-decimal">.</span><span class="money-fractional">{3}</span></span>
+                        <div class="BankAccount-descriptionLine collapsible">
+                            <div class="BankAccount-name">EveryDollar Balance<span class="BankAccount-expander"><svg class="icon icon--chevron icon--inline small" viewBox="0 0 40 40"><path id="ReconcileCollapse" d="M22.1374,28.03471a3.1012,3.1012,0,0,1-4.29536-.00148L5.14816,15.64438a2.79272,2.79272,0,0,1-.40086-3.88443,2.79274,2.79274,0,0,1,3.893.30632L17.844,21.04885c1.94327,2.06586,2.882,1.41479,4.29533.00147l9.22081-8.987a2.79286,2.79286,0,0,1,3.8935-.30338,2.79284,2.79284,0,0,1-.40329,3.88441Z"></path></svg></span></div>
+                            <div class="BankAccount-balance"><span class="money undefined{2}" data-text="{4}.{5}"><span class="money-sign">{3}</span><span class="money-symbol">$</span><span class="money-integer">{4}</span><span class="money-decimal">.</span><span class="money-fractional">{5}</span></span></div>
+                        </div>
+                        <div style="display:none">
+                        <div class="BankAccount"></div>
+                        <div class="BankAccount">
+                            <div class="BankAccount-descriptionLine">
+                                <div class="BankAccount-name">
+                                    Starting Balance
+                                    <span class="BankAccount-expander"></span></div>
+                                    <div class="BankAccount-balance"><span class="money undefined{6}" data-text="{8}.{9}"><span class="money-sign">{7}</span><span class="money-symbol">$</span><span class="money-integer">{8}</span><span class="money-decimal">.</span><span class="money-fractional">{9}</span></span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="BankAccount">
-                        <div class="BankAccount-descriptionLine">
-                            <div class="BankAccount-name">
-                                Remaining Budget
-                                <span class="BankAccount-expander"></span></div>
-                                <div class="BankAccount-balance"><span class="money undefined" data-text="{4}.{5}"><span class="money-symbol">$</span><span class="money-integer">{4}</span><span class="money-decimal">.</span><span class="money-fractional">{5}</span></span>
+                        <div class="BankAccount">
+                            <div class="BankAccount-descriptionLine">
+                                <div class="BankAccount-name">
+                                    Total Income
+                                    <span class="BankAccount-expander"></span></div>
+                                    <div class="BankAccount-balance"><span class="money undefined{10}" data-text="{12}.{13}"><span class="money-sign">{11}</span><span class="money-symbol">$</span><span class="money-integer">{12}</span><span class="money-decimal">.</span><span class="money-fractional">{13}</span></span>
+                                </div>
                             </div>
+                        </div>
+                        <div class="BankAccount">
+                            <div class="BankAccount-descriptionLine">
+                                <div class="BankAccount-name">
+                                    Total Spent
+                                    <span class="BankAccount-expander"></span></div>
+                                    <div class="BankAccount-balance"><span class="money undefined{14}" data-text="{16}.{17}"><span class="money-sign">{15}</span><span class="money-symbol">$</span><span class="money-integer">{16}</span><span class="money-decimal">.</span><span class="money-fractional">{17}</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="BankAccount">
+                            <div class="BankAccount-descriptionLine">
+                                <div class="BankAccount-name">
+                                    Remaining Budget
+                                    <span class="BankAccount-expander"></span></div>
+                                    <div class="BankAccount-balance"><span class="money undefined" data-text="{18}.{19}"><span class="money-symbol">$</span><span class="money-integer">{18}</span><span class="money-decimal">.</span><span class="money-fractional">{19}</span></span>
+                                </div>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -63,66 +89,181 @@ var strModal = `
     </div>
 </div>
 </div>
-`
+`;
 var balances = {
+    //current bank balance as reported by the bank
     bankBalance: 0,
+    //Total income received 
+    receivedIncome: 0,
+    //Sum of planned budgets
+    planned: 0,
+    //Sum of planned budgets
+    spentThisMonth: 0,
+    //sum of remaining balances from all budget lines
     remainingBalance: 0,
-    nonFundRemaining: 0
+    //sum of remaining balance from all budget lines that aren't funds
+    //This is significant because it doesn't carry over to the next month
+    nonFundRemaining: 0,
+    //sum of transactions which have not yet been categorized
+    unTrackedBalance: 0,
+    // Sum of tracked balances
+    tracked: 0,
+    //sum of all fund starting balances
+    fundStarting: 0
 };
+
+//Closes any open card
+function CloseCard() {
+    var closeButtons = document.getElementsByClassName("CloseIcon");
+    closeButtons[0].parentElement.click();
+    closeButtons[0].parentElement.click();
+}
 
 //Goes through each fund and calculates the balance of all budgets
 function getRemaining(balances) {
+    debugger;
+    balances.planned = 0;
+    balances.tracked = 0;
+    balances.spentThisMonth = 0;
+    balances.receivedIncome = 0;
     balances.remainingBalance = 0;
     balances.nonFundRemaining = 0;
+    balances.unTrackedBalance = 0;
+    balances.fundStarting = 0;
     var expenseRemainingElements;
+    var planned = 0;
+    var tempCurr;
+    var tempString;
 
+    var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
+
+    CloseCard();
+
+    /*
+    //Start by subtracting the expected incomes
     var incomeGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--income");
     for (var income = 0; income < incomeGroup.length; income++) {
         incomePlannedElements = incomeGroup[income].getElementsByClassName("input--inline--budget--sm no-wrap text--right");
         for (var ndx = 0; ndx < incomePlannedElements.length; ndx++) {
-            balances.remainingBalance -= parseFloat(incomePlannedElements[ndx].getAttribute("value").replace(/[^0-9.-]+/g, ''));
+            //balances.remainingBalance -= parseFloat(incomePlannedElements[ndx].getAttribute("value").replace(/[^0-9.-]+/g, ''));
         }
     }
+    */
 
+    //Add recieved incomes, this should result in 0 remainingBalance at the end of the month
     var incomeReceivedElements = document.getElementsByClassName("money BudgetItem-secondColumn money--received");
-    for (var income = 0; income < incomeReceivedElements.length; income++) {
-        balances.remainingBalance += parseFloat(incomeReceivedElements[income].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
+    for (income = 0; income < incomeReceivedElements.length; income++) {
+        balances.receivedIncome += parseFloat(incomeReceivedElements[income].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
+    }
+    balances.remainingBalance += balances.receivedIncome;
+
+    //Grab the amount left to budget from under the income card
+    var remainingString = document.evaluate('//div[@class="AmountBudgeted"]//span[@class="money undefined"]/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+    if (remainingString != "") {
+        balances.remainingBalance += parseFloat(remainingString.replace(/[^0-9.-]+/g, ''));
     }
 
-    var leftToBudget = document.getElementsByClassName("money AmountBudgeted-amount")[0];
-    if (leftToBudget) {
-        balances.remainingBalance += parseFloat(leftToBudget.getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
-    }
-
+    //Loop through all the budget lines and add the balances to remainingBalance
     var expenseGroups = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--expense");
     for (var expense = 0; expense < expenseGroups.length; expense++) {
-        expenseRemainingElements = expenseGroups[expense].getElementsByClassName("money BudgetItem-secondColumn money--remaining");
+        expenseRemainingElements = expenseGroups[expense].getElementsByClassName("BudgetItemRow-content");
         for (var ndx = 0; ndx < expenseRemainingElements.length; ndx++) {
-            expenseRemainingElements[ndx].parentElement.parentElement.click();
-            balances.remainingBalance += parseFloat(document.evaluate('//div[@class="card"]/div/div[last()]/div[last()]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
             
-            if (document.evaluate('//div[@class="BudgetItemDetails-fundHeading"]/span', document, null, XPathResult.STRING_TYPE, null).stringValue == 'Fund')
-            {
-                balances.nonFundRemaining += parseFloat(document.evaluate('//div[@class="BudgetItemDetails-digestRowAmount BudgetItemDetails-digestRow--remaining"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
+            //Sum the planned and remaining
+            planned = parseFloat(expenseRemainingElements[ndx].getElementsByClassName("BudgetItemRow-input BudgetItemRow-input--amountBudgeted input--inline--budget--sm no-wrap text--right")[0].attributes["value"].value.replace(/[^0-9.-]+/g, ''));
+            balances.planned += planned;
+            //balances.remainingBalance += parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
+
+            //Nonfund
+            if (expenseRemainingElements[ndx].getElementsByTagName("img").length == 0) {
+                tempCurr = parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
+                balances.spentThisMonth -= (planned - tempCurr);
+                balances.nonFundRemaining += tempCurr;
+            } else {
+                //Fund
+                //Sum the fund balances
+                expenseRemainingElements[ndx].click();
+                document.getElementsByClassName("Expander-title")[1].click();
+
+                //Starting Balance
+                tempString = document.evaluate('//div[@class="BudgetItemDetails-formRow BudgetItemDetails-formRow--bottomMarginSm"]//input/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                if (tempString != "") {
+                    balances.fundStarting += parseFloat(tempString.replace(/[^0-9.-]+/g, ''));
+                }
+
+                //Spent this month
+                tempString = document.evaluate('//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--spent"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                if (tempString != "") {
+                    //debugger;
+                    balances.spentThisMonth += parseFloat(tempString.replace(/[^0-9.-]+/g, ''));
+                }
             }
+            CloseCard()
         }
     }
 
+    balances.remainingBalance = balances.fundStarting - balances.spentThisMonth;
+
+    //Add the debt items as well, their formatting is weird so I have to do math
     var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt Budget-budgetGroup--debtShowBalance");
     for (var debt = 0; debt < debtGroup.length; debt++) {
         debtRows = debtGroup[debt].getElementsByClassName("BudgetItemRow");
         for (var row = 0; row < debtRows.length; row++) {
             budgeted = parseFloat(debtRows[row].getElementsByClassName("input--inline--budget--sm no-wrap text--right")[0].value.replace(/[^0-9.-]+/g, ''));
             paidOff = parseFloat(debtRows[row].getElementsByClassName("money BudgetItem-secondColumn")[1].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
-            balances.remainingBalance += (budgeted - paidOff);
+            balances.planned += budgeted;
+            balances.spentThisMonth -= paidOff;
+            balances.nonFundRemaining += budgeted - paidOff;
         }
     }
 
-    document.getElementsByClassName("svg-times")[0].click();
+    //Get the total of untracked transactions
+    document.getElementById("IconTray_transactions").click();
+    document.getElementById("unallocated").click();
+    var unTrackedIterator = document.evaluate('//div[contains(@class, "ui-item--card transaction-card transaction-card--unallocated")]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+    var unTracked = unTrackedIterator.iterateNext();
+    while (unTracked) {
+        balances.unTrackedBalance += parseFloat(unTracked.value.replace(/[^0-9.-]+/g, ''));
+        unTracked = unTrackedIterator.iterateNext();
+    }
+    balances.remainingBalance += balances.unTrackedBalance;
 
-    balances.nonFundRemaining = parseFloat(balances.nonFundRemaining.toFixed(2));
+    /* Not working because not all the transactions load
+    //Get all tracked transactions
+    document.getElementById("allocated").click()
+    //setTimeout(getTracked, 1000);
+    var trackedIterator = document.evaluate('//div[@class="ui-item--card transaction-card transaction-card--allocated"]//div[div/div/span="' + currentMonth + '"]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
+    var tracked = trackedIterator.iterateNext();
+    while (tracked) {
+        balances.tracked += parseFloat(tracked.value.replace(/[^0-9.-]+/g, ''));
+        tracked = trackedIterator.iterateNext();
+    }
+    */
+    
+    CloseCard()
+
+    balances.remainingBalance = balances.fundStarting + balances.receivedIncome + balances.spentThisMonth + balances.unTrackedBalance;
+
+    balances.fundStarting = parseFloat(balances.fundStarting.toFixed(2));
+    balances.receivedIncome = parseFloat(balances.receivedIncome.toFixed(2));
+    balances.spentThisMonth = parseFloat((balances.spentThisMonth).toFixed(2));
+    balances.unTrackedBalance = parseFloat(balances.unTrackedBalance.toFixed(2));
     balances.remainingBalance = parseFloat(balances.remainingBalance.toFixed(2));
+
+    balances.planned = parseFloat(balances.planned.toFixed(2));
     balances.bankBalance = getAccountBalance();
+    balances.nonFundRemaining = parseFloat(balances.nonFundRemaining.toFixed(2));
+}
+
+function getTracked() {
+    debugger;
+    var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
+    var trackedIterator = document.evaluate('//div[@class="ui-item--card transaction-card transaction-card--allocated"]//div[div/div/span="' + currentMonth + '"]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
+    var tracked = trackedIterator.iterateNext();
+    while (tracked) {
+        balances.tracked += parseFloat(tracked.value.replace(/[^0-9.-]+/g, ''));
+        tracked = trackedIterator.iterateNext();
+    }
 }
 
 //Converts a number to a currency formatted string
@@ -152,30 +293,30 @@ function updateDisplay(htmlObject, classNames = "") {
 //Displays a spinner
 function startSpinner(target) {
     var opts = {
-        lines: 13 // The number of lines to draw
-        , length: 14 // The length of each line
-        , width: 7 // The line thickness
-        , radius: 21 // The radius of the inner circle
-        , scale: 1 // Scales overall size of the spinner
-        , corners: 1 // Corner roundness (0..1)
-        , color: '#000' // #rgb or #rrggbb or array of colors
-        , opacity: 0.25 // Opacity of the lines
-        , rotate: 0 // The rotation offset
-        , direction: 1 // 1: clockwise, -1: counterclockwise
-        , speed: 1 // Rounds per second
-        , trail: 60 // Afterglow percentage
-        , fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-        , zIndex: 2e9 // The z-index (defaults to 2000000000)
-        , className: 'spinner' // The CSS class to assign to the spinner
-        , top: '50%' // Top position relative to parent
-        , left: '50%' // Left position relative to parent
-        , shadow: false // Whether to render a shadow
-        , hwaccel: false // Whether to use hardware acceleration
-        , position: 'absolute' // Element positioning
-    }
-    
+        lines: 13, // The number of lines to draw
+        length: 14, // The length of each line
+        width: 7, // The line thickness
+        radius: 21, // The radius of the inner circle
+        scale: 1, // Scales overall size of the spinner
+        corners: 1, // Corner roundness (0..1)
+        color: '#000', // #rgb or #rrggbb or array of colors
+        opacity: 0.25, // Opacity of the lines
+        rotate: 0, // The rotation offset
+        direction: 1, // 1: clockwise, -1: counterclockwise
+        speed: 1, // Rounds per second
+        trail: 60, // Afterglow percentage
+        fps: 20, // Frames per second when using setTimeout() as a fallback for CSS
+        zIndex: 2e9, // The z-index (defaults to 2000000000)
+        className: 'spinner', // The CSS class to assign to the spinner
+        top: '50%', // Top position relative to parent
+        left: '50%', // Left position relative to parent
+        shadow: false, // Whether to render a shadow
+        hwaccel: false, // Whether to use hardware acceleration
+        position: 'absolute', // Element positioning
+    };
+
     var spinner = new Spinner(opts).spin();
-    target.replaceChild(spinner.el, target.firstChild)
+    target.replaceChild(spinner.el, target.firstChild);
 }
 
 //Gets the first account balance
@@ -184,86 +325,121 @@ function getAccountBalance() {
     accountTrayIcon[1].click();
 
     var fltBalance = parseFloat(document.evaluate('//div[@class="BankAccount-balance"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
-    
+
     document.evaluate('//button[@class="close"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click();
-    
+
     return fltBalance;
 }
 
 //Updates the balances
-function updateBalances(){
-    debugger;
+function updateBalances() {
     var valElements = document.getElementsByClassName("modal-body");
     //var valElements = document.getElementsByClassName("BankAccount-balance");
-    for (var ndx = 0; ndx < valElements.length; ndx++){
+    for (var ndx = 0; ndx < valElements.length; ndx++) {
         startSpinner(valElements[ndx]);
     }
-    
+
     setTimeout(function() {
         closeModal();
-        getRemaining(balances)
+        getRemaining(balances);
         displayModal();
     }, 0);
 }
 
 //Closes the modal window
-function closeModal(){
-    debugger;
+function closeModal() {
     var reactNode = document.getElementsByClassName("ReactModalPortal")[0];
     reactNode.removeChild(reactNode.lastChild);
 }
 
 //Displays the modal window with balance information
-function displayModal(){
-    debugger;
+function displayModal() {
     var strClass;
-    if (balances.bankBalance == balances.remainingBalance){
+    var strSign;
+    if (balances.bankBalance == (balances.remainingBalance).toFixed(2)) {
         strClass = " money--remaining";
-    }
-    else{
+    } else {
         strClass = " money--danger";
     }
-
     modalNode = document.createElement("div");
-    modalNode.innerHTML = strModal.format(Math.floor(balances.bankBalance), Math.round((balances.bankBalance % 1) * 100), Math.floor(balances.remainingBalance), Math.round((balances.remainingBalance % 1) * 100), Math.floor(balances.nonFundRemaining), Math.round((balances.nonFundRemaining % 1) * 100), strClass);
+    modalNode.innerHTML = strModal.format(
+        Math.trunc(balances.bankBalance), balances.bankBalance.toFixed(2).slice(-2),
+        strClass, balances.remainingBalance < 0 ? "-" : "", Math.trunc(Math.abs(balances.remainingBalance)), balances.remainingBalance.toFixed(2).slice(-2),
+        "", balances.fundStarting < 0 ? "-" : "", Math.trunc(Math.abs(balances.fundStarting)), balances.fundStarting.toFixed(2).slice(-2),
+        "", balances.receivedIncome < 0 ? "-" : "", Math.trunc(Math.abs(balances.receivedIncome)), balances.receivedIncome.toFixed(2).slice(-2),
+        "", balances.spentThisMonth < 0 ? "-" : "", Math.trunc(Math.abs(balances.spentThisMonth)), balances.spentThisMonth.toFixed(2).slice(-2),
+        Math.trunc(balances.nonFundRemaining), balances.nonFundRemaining.toFixed(2).slice(-2)
+    );
 
     var reactNode = document.getElementsByClassName("ReactModalPortal")[0];
     reactNode.appendChild(modalNode);
 
-    var closeButton = document.getElementById("Modal_close")
+    var closeButton = document.getElementById("Modal_close");
     closeButton.addEventListener("click", closeModal);
 
-    var refreshButton = document.getElementById("modalRefreshButton")
+    var refreshButton = document.getElementById("modalRefreshButton");
     refreshButton.addEventListener("click", updateBalances);
+
+    var collDivs = document.getElementsByClassName("collapsible");
+    var collArrowPath = document.getElementById("ReconcileCollapse");
+    var i;
+
+    // Cause the lower fields to collapse
+    for (i = 0; i < collDivs.length; i++) {
+        collDivs[i].addEventListener("click", function() {
+            this.classList.toggle("active");
+            var content = this.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                collArrowPath.setAttribute('transform','');
+            } else {
+                content.style.display = "block";
+                collArrowPath.setAttribute('transform','rotate(180, 20, 20)');
+            }
+        });
+    }
 }
 
 //Adds the plugin button to the top of the page
 function insertButton() {
-    var buttonNode;
+    if (!pluginButton) {
+        pluginButton = document.createElement("div");
+        pluginButton.innerHTML = strButton;
 
-    buttonNode = document.createElement("div");
-    buttonNode.innerHTML = strButton;
-
-    buttonNode.setAttribute("id", "pluginButton");
-    buttonNode.addEventListener("click", displayModal);
+        pluginButton.setAttribute("id", "pluginButton");
+        pluginButton.addEventListener("click", displayModal);
+    }
 
     parentNode = document.getElementsByClassName("ui-app-icon-tray IconTray")[0];
     beforeNode = document.getElementsByClassName("IconTray-item IconTray-item--accounts")[0];
-    parentNode.insertBefore(buttonNode, beforeNode);
+    parentNode.insertBefore(pluginButton, beforeNode);
 }
+
+var pluginButton;
 
 //Main function is called on page load or button click
 function main(evt) {
-    //startSpinner();
-    //setTimeout(insertButton, 0);
     insertButton();
     setTimeout(getRemaining(balances), 0);
 }
 
 //Event is fired when the page is finished loading
-var checkExist = setInterval(function () {
-    if (document.getElementsByClassName("AccountIcon").length > 0) {
+var checkExist = setInterval(function() {
+
+    //Determine when the paged is finished loading if the tray exists
+    accountIcon = document.getElementsByClassName("AccountIcon");
+    if (accountIcon.length > 0) {
         main();
         clearInterval(checkExist);
+
+        //The button is removed when the month is changed so recreate it
+        var observer = new MutationObserver(function(mutations) {
+            if (!document.body.contains(pluginButton) && document.body.contains(accountIcon[0])) {
+                main();
+            }
+        });
+        observer.observe(document.body, {
+            childList: true
+        });
     }
 }, 100);
