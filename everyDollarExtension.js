@@ -12,6 +12,27 @@ String.prototype.format = function() {
     return s;
 };
 
+var incomePayments = [];
+var nonFunds = [];
+var debtPayments = [];
+
+var toType = function(obj) {
+    return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
+}
+
+  chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+        switch(request.function) {
+            case "getPayments":
+                sendResponse({nonFunds: nonFunds, incomePayments: incomePayments, debtPayments: debtPayments});
+                break;
+            case "getBalances":
+                sendResponse({startingBalance: balances.fundStarting, currentBalance: balances.remainingBalance});
+                break;
+        }
+    }
+);
+
 var strButton = `
 <div id="IconTray_accounts" class="IconTray-item IconTray-item--accounts">
     <div class="IconTray-caption">Reconcile</div>
@@ -121,7 +142,6 @@ function CloseCard() {
 
 //Goes through each fund and calculates the balance of all budgets
 function getRemaining(balances) {
-    debugger;
     balances.planned = 0;
     balances.tracked = 0;
     balances.spentThisMonth = 0;
@@ -134,7 +154,7 @@ function getRemaining(balances) {
     var planned = 0;
     var tempCurr;
     var tempString;
-
+    
     var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
 
     CloseCard();
@@ -151,9 +171,14 @@ function getRemaining(balances) {
     */
 
     //Add recieved incomes, this should result in 0 remainingBalance at the end of the month
-    var incomeReceivedElements = document.getElementsByClassName("money BudgetItem-secondColumn money--received");
+    var incomeGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--income");
+    var incomeReceivedElements = incomeGroup[0].getElementsByClassName("BudgetItemRow")
     for (income = 0; income < incomeReceivedElements.length; income++) {
-        balances.receivedIncome += parseFloat(incomeReceivedElements[income].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
+        tempString = incomeReceivedElements[income].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value;
+        tempCurr = parseFloat(incomeReceivedElements[income].getElementsByClassName("BudgetItemRow-input--amountBudgeted")[0].value.replace(/[^0-9.-]+/g, ''));
+        balances.receivedIncome += parseFloat(incomeReceivedElements[income].getElementsByClassName("money BudgetItem-secondColumn money--received")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
+
+        incomePayments.push({"Name": tempString, "Amount": tempCurr});
     }
     balances.remainingBalance += balances.receivedIncome;
 
@@ -176,9 +201,12 @@ function getRemaining(balances) {
 
             //Nonfund
             if (expenseRemainingElements[ndx].getElementsByTagName("img").length == 0) {
+                tempString = expenseRemainingElements[ndx].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value
                 tempCurr = parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
                 balances.spentThisMonth -= (planned - tempCurr);
                 balances.nonFundRemaining += tempCurr;
+
+                nonFunds.push({"Name": tempString, "Amount": -planned});
             } else {
                 //Fund
                 //Sum the fund balances
@@ -186,16 +214,23 @@ function getRemaining(balances) {
                 document.getElementsByClassName("Expander-title")[1].click();
 
                 //Starting Balance
-                tempString = document.evaluate('//div[@class="BudgetItemDetails-formRow BudgetItemDetails-formRow--bottomMarginSm"]//input/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                tempStartingBalance = document.evaluate('//div[@class="BudgetItemDetails-formRow BudgetItemDetails-formRow--bottomMarginSm"]//input/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
                 if (tempString != "") {
-                    balances.fundStarting += parseFloat(tempString.replace(/[^0-9.-]+/g, ''));
-                }
+                    StartingBalance = parseFloat(tempStartingBalance.replace(/[^0-9.-]+/g, ''));
+                    balances.fundStarting += StartingBalance;
 
-                //Spent this month
-                tempString = document.evaluate('//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--spent"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                if (tempString != "") {
-                    //debugger;
-                    balances.spentThisMonth += parseFloat(tempString.replace(/[^0-9.-]+/g, ''));
+                    //Spent this month
+                    tempPlanned = document.evaluate('//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--amountBudgeted"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                    if (tempString != "") {
+                        Planned = parseFloat(tempPlanned.replace(/[^0-9.-]+/g, ''));
+
+                        tempBalance = document.evaluate('//div[@class="BudgetItemDetails-formRow BudgetItemDetails-formRow--bottomMarginSm BudgetItemDetails-formRow--fundBalance"]/p/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                        if (tempBalance != "") {
+                            Balance = parseFloat(tempBalance.replace(/[^0-9.-]+/g, ''));
+
+                            balances.spentThisMonth += Balance - (StartingBalance + Planned)
+                        }
+                    }
                 }
             }
             CloseCard()
@@ -205,15 +240,19 @@ function getRemaining(balances) {
     balances.remainingBalance = balances.fundStarting - balances.spentThisMonth;
 
     //Add the debt items as well, their formatting is weird so I have to do math
+    debugger;
     var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt Budget-budgetGroup--debtShowBalance");
     for (var debt = 0; debt < debtGroup.length; debt++) {
         debtRows = debtGroup[debt].getElementsByClassName("BudgetItemRow");
         for (var row = 0; row < debtRows.length; row++) {
+            tempString = debtRows[row].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value;
             budgeted = parseFloat(debtRows[row].getElementsByClassName("input--inline--budget--sm no-wrap text--right")[0].value.replace(/[^0-9.-]+/g, ''));
             paidOff = parseFloat(debtRows[row].getElementsByClassName("money BudgetItem-secondColumn")[1].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
             balances.planned += budgeted;
             balances.spentThisMonth -= paidOff;
             balances.nonFundRemaining += budgeted - paidOff;
+
+            debtPayments.push({"Name": tempString, "Amount": -budgeted});
         }
     }
 
@@ -256,7 +295,6 @@ function getRemaining(balances) {
 }
 
 function getTracked() {
-    debugger;
     var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
     var trackedIterator = document.evaluate('//div[@class="ui-item--card transaction-card transaction-card--allocated"]//div[div/div/span="' + currentMonth + '"]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
     var tracked = trackedIterator.iterateNext();

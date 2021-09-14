@@ -1,0 +1,23 @@
+.payments {
+    width: 500px;
+}
+
+::-webkit-calendar-picker-indicator{
+    margin-left: 0px;
+}
+
+.dateInput {
+    width: 100px;
+}
+
+.row {
+    display: flex;
+}
+  
+.column {
+    flex: 15%;
+}
+
+.delete {
+    width: 25px;
+}

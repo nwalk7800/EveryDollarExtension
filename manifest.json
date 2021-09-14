@@ -13,8 +13,10 @@
         "default_title": "EveryDollar Reconcile"
     },
     "permissions": [
+        "tabs",
         "activeTab",
-        "declarativeContent"
+        "declarativeContent",
+        "storage"
     ],
     "content_scripts": [
         {
@@ -27,5 +29,6 @@
                 "everyDollarExtension.js"
             ]
         }
-    ]
+    ],
+    "options_page": "options.html"
 }
