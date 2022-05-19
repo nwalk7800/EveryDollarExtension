@@ -1,23 +1,36 @@
-.payments {
-    width: 500px;
-}
-
 ::-webkit-calendar-picker-indicator{
     margin-left: 0px;
 }
 
 .dateInput {
-    width: 100px;
+    width: 140px;
+    margin-left: 25px;
+    margin-right: 25px;
 }
 
-.row {
-    display: flex;
-}
-  
-.column {
-    flex: 15%;
+.ul {
+    text-align: justify;
 }
 
-.delete {
-    width: 25px;
+.ul:after {
+    content: '';
+    display: inline-block;
+    width: 100%;
+}
+
+.ul:before {
+    content: '';
+    display: block;
+    margin-top: -1.25em;
+}
+
+.li {
+    display: inline-block;
+    margin-right: -.25em;
+    position: relative;
+    top: 1.25em;
+}
+
+.startingBalance {
+    float: right;
 }

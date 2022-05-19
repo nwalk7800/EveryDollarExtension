@@ -1,6 +1,4 @@
 // TODO:
-// Pull funds from page?
-// Datepicker for each fund
 
 var today = new Date();
 var startingBalance = 0;
@@ -14,7 +12,7 @@ var formatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
-// For sorting payments by date byDate
+// For sorting payments by date
 function byDate(a, b) {
   todaysDay = today.getUTCDate();
 
@@ -271,7 +269,7 @@ function updatePayments() {
       // Find salary and split it into bi-weekly
       // TODO:
       // remove or replace existing payments
-      // Determin proper divisor
+      // Determine proper divisor
       allPayments.some(payment => {
         if (payment.Name == "My Salary") {
           var payDates = getPayDates(payment.Day);
