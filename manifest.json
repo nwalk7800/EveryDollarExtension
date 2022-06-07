@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "EveryDollar Reconcile",
-    "description": "Adds a reconcile icon to the icon tray to show some useful reconciliation information.",
-    "version": "0.7",
+    "description": "Adds reconcile and daily balance icons to the icon tray to show some useful information.",
+    "version": "0.8",
     "background" : {
         "service_worker" : "background.js"
     },
