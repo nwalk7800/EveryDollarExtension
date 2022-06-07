@@ -216,11 +216,11 @@ function getRemaining(balances) {
                     if (tempString != "") {
                         Planned = parseFloat(tempPlanned.replace(/[^0-9.-]+/g, ''));
 
-                        tempSpent = document.evaluate('//span[text()="Spent This Month"]/parent::div/following-sibling::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                        if (tempSpent != "") {
-                            spentThisMonth = parseFloat(tempSpent.replace(/[^0-9.-]+/g, ''));
+                        tempRemaining = document.evaluate('//P[text()="Fund Balance:"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;;
+                        if (tempRemaining != "") {
+                            remaining = parseFloat(tempRemaining.replace(/[^0-9.-]+/g, ''));
 
-                            balances.spentThisMonth += spentThisMonth
+                            balances.spentThisMonth -= StartingBalance - remaining + Planned;
                         }
                     }
                 }
