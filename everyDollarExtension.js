@@ -160,7 +160,14 @@ function getRemaining(balances) {
     var tempCurr;
     var tempString;
     
+    incomePayments = [];
+    nonFunds = [];
+    debtPayments = [];
+
+
     var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
+
+    debugger;
 
     CloseCard();
 
@@ -192,7 +199,7 @@ function getRemaining(balances) {
             balances.planned += planned;
 
             //Nonfund
-            if (expenseRemainingElements[ndx].getElementsByTagName("img").length == 0) {
+            if (expenseRemainingElements[ndx].getElementsByTagName("svg").length == 0) {
                 tempString = expenseRemainingElements[ndx].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value
                 tempCurr = parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
                 balances.spentThisMonth -= (planned - tempCurr);
@@ -206,17 +213,19 @@ function getRemaining(balances) {
                 document.getElementsByClassName("Expander-title")[1].click();
 
                 //Starting Balance
-                tempStartingBalance = document.evaluate('//*[@id="starting-balance"]/@value', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                //tempStartingBalance = document.evaluate('//*[@id="original-starting-balance"]/@value', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                tempStartingBalance = document.evaluate('(//div[contains(@class, "AllocationListItem-amount")])[2]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
                 if (tempString != "") {
                     StartingBalance = parseFloat(tempStartingBalance.replace(/[^0-9.-]+/g, ''));
                     balances.fundStarting += StartingBalance;
 
                     //Spent this month
-                    tempPlanned = document.evaluate('//div[@class="BudgetItemDetails-formRowAmount BudgetItemDetails-formRow--amountBudgeted"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                    if (tempString != "") {
+                    //tempPlanned = document.evaluate('//*/div[@title = "Saved This Month"]/following::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                    tempPlanned = document.evaluate('(//div[contains(@class, "AllocationListItem-amount")])[1]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                    if (tempPlanned != "") {
                         Planned = parseFloat(tempPlanned.replace(/[^0-9.-]+/g, ''));
 
-                        tempRemaining = document.evaluate('//P[text()="Fund Balance:"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;;
+                        tempRemaining = document.evaluate('//*/div[@class="Allocations-footer"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;;
                         if (tempRemaining != "") {
                             remaining = parseFloat(tempRemaining.replace(/[^0-9.-]+/g, ''));
 
