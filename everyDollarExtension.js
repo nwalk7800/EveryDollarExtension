@@ -183,7 +183,7 @@ function getRemaining(balances) {
     }
 
     //Grab the amount left to budget from under the income card
-    var unbudgetedString = document.evaluate('//div[@class="AmountBudgeted"]//span[@class="money undefined"]/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+    var unbudgetedString = document.evaluate('//div[@class="AmountBudgeted BudgetSummaryContainer-amount"]/span/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
     if (unbudgetedString != "") {
         unbudgeted = parseFloat(unbudgetedString.replace(/[^0-9.-]+/g, ''));
     }
@@ -213,15 +213,14 @@ function getRemaining(balances) {
                 document.getElementsByClassName("Expander-title")[1].click();
 
                 //Starting Balance
-                //tempStartingBalance = document.evaluate('//*[@id="original-starting-balance"]/@value', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                tempStartingBalance = document.evaluate('(//div[contains(@class, "AllocationListItem-amount")])[2]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                if (tempString != "") {
+                tempStartingBalance = document.evaluate('//div[text() = "Carryover Balance"]/parent::div/following-sibling::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                if (tempStartingBalance != "") {
                     StartingBalance = parseFloat(tempStartingBalance.replace(/[^0-9.-]+/g, ''));
                     balances.fundStarting += StartingBalance;
 
                     //Spent this month
-                    //tempPlanned = document.evaluate('//*/div[@title = "Saved This Month"]/following::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                    tempPlanned = document.evaluate('(//div[contains(@class, "AllocationListItem-amount")])[1]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                    //tempPlanned = document.evaluate('//div[text() = "Planned This Month"]/parent::div/following-sibling::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
+                    tempPlanned = expenseRemainingElements[ndx].getElementsByClassName("AmountBudgetedInputContainer")[0].childNodes[0].value;
                     if (tempPlanned != "") {
                         Planned = parseFloat(tempPlanned.replace(/[^0-9.-]+/g, ''));
 
@@ -239,13 +238,13 @@ function getRemaining(balances) {
     }
 
     //Add the debt items as well, their formatting is weird so I have to do math
-    var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt Budget-budgetGroup--debtShowBalance");
+    var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt");
     for (var debt = 0; debt < debtGroup.length; debt++) {
         debtRows = debtGroup[debt].getElementsByClassName("BudgetItemRow");
         for (var row = 0; row < debtRows.length; row++) {
             tempString = debtRows[row].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value;
             budgeted = parseFloat(debtRows[row].getElementsByClassName("input--inline--budget--sm no-wrap text--right")[0].value.replace(/[^0-9.-]+/g, ''));
-            paidOff = parseFloat(debtRows[row].getElementsByClassName("money BudgetItem-secondColumn")[1].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
+            paidOff = parseFloat(debtRows[row].getElementsByClassName("money BudgetItem-secondColumn")[0].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
             balances.planned += budgeted;
             balances.spentThisMonth -= paidOff;
             balances.nonFundRemaining += budgeted - paidOff;
@@ -258,7 +257,7 @@ function getRemaining(balances) {
     document.evaluate('//button[@data-testid="OperationsPanelTriggerTransactions"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click()
     //document.getElementById("IconTray_transactions").click();
     document.getElementById("unallocated").click();
-    var unTrackedIterator = document.evaluate('//div[contains(@class, "ui-item--card transaction-card transaction-card--unallocated")]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+    var unTrackedIterator = document.evaluate('//div[contains(@class, "ui-item--card TransactionCard TransactionCard-unallocated")]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
     var unTracked = unTrackedIterator.iterateNext();
     while (unTracked) {
         balances.unTrackedBalance += parseFloat(unTracked.value.replace(/[^0-9.-]+/g, ''));
@@ -361,7 +360,8 @@ function getAccountBalance() {
 
     var fltBalance = parseFloat(document.evaluate('//div[@class="BankAccount-balance"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
 
-    document.evaluate('//button[@class="close"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click();
+    var closeButton = document.evaluate('//button[@class="close"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+    if (closeButton) {closeButton.click()}
 
     return fltBalance;
 }
