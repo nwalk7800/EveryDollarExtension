@@ -12,9 +12,19 @@ String.prototype.format = function() {
     return s;
 };
 
+var reconcileButton;
+
+var UUID = "";
+var userId = "";
+var authHeader = "";
+var accountName = "Bank of AmericaAdv Plus Banking - 1598"
+
 var incomePayments = [];
 var nonFunds = [];
 var debtPayments = [];
+var allAccounts = new Map();
+
+var allPromises = [];
 
 var toType = function(obj) {
     return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
@@ -134,6 +144,19 @@ var balances = {
     fundStarting: 0
 };
 
+async function SendRequest(url) {
+    var requestInfo = {
+        method: 'GET',
+        headers: {
+            'Authorization': authHeader
+        }
+    }
+
+    return fetch(url, requestInfo)
+        .then((response)=>response.json())
+        .then((responseJson)=>{return responseJson});
+}
+
 //Closes any open card
 function CloseCard() {
     // Close the transaction drawer first because it's an odball and sits on top of other cards
@@ -143,10 +166,13 @@ function CloseCard() {
     if (closeButtons.length > 0) {
         closeButtons[0].parentElement.click();
     }
+    //for (var button = 0; button < closeButtons.length; button++) {
+    //    closeButtons[button].parentElement.click();
+    //}
 }
 
 //Goes through each fund and calculates the balance of all budgets
-function getRemaining(balances) {
+async function updateReconcile() {
     balances.planned = 0;
     balances.tracked = 0;
     balances.spentThisMonth = 0;
@@ -155,6 +181,7 @@ function getRemaining(balances) {
     balances.nonFundRemaining = 0;
     balances.unTrackedBalance = 0;
     balances.fundStarting = 0;
+    
     var expenseRemainingElements;
     var planned = 0;
     var tempCurr;
@@ -169,126 +196,28 @@ function getRemaining(balances) {
 
     debugger;
 
-    CloseCard();
-
-    //Add recieved incomes, this should result in 0 remainingBalance at the end of the month
-    var incomeGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--income");
-    var incomeReceivedElements = incomeGroup[0].getElementsByClassName("BudgetItemRow")
-    for (income = 0; income < incomeReceivedElements.length; income++) {
-        tempString = incomeReceivedElements[income].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value;
-        tempCurr = parseFloat(incomeReceivedElements[income].getElementsByClassName("BudgetItemRow-input--amountBudgeted")[0].value.replace(/[^0-9.-]+/g, ''));
-        balances.receivedIncome += parseFloat(incomeReceivedElements[income].getElementsByClassName("money BudgetItem-secondColumn money--received")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
-
-        incomePayments.push({"Name": tempString, "Amount": tempCurr});
-    }
-
     //Grab the amount left to budget from under the income card
     var unbudgetedString = document.evaluate('//div[@class="AmountBudgeted BudgetSummaryContainer-amount"]/span/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
     if (unbudgetedString != "") {
         unbudgeted = parseFloat(unbudgetedString.replace(/[^0-9.-]+/g, ''));
     }
 
-    //Loop through all the budget lines and add the balances to remainingBalance
-    var expenseGroups = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--expense");
-    for (var expense = 0; expense < expenseGroups.length; expense++) {
-        expenseRemainingElements = expenseGroups[expense].getElementsByClassName("BudgetItemRow-content");
-        for (var ndx = 0; ndx < expenseRemainingElements.length; ndx++) {
-            
-            //Sum the planned and remaining
-            planned = parseFloat(expenseRemainingElements[ndx].getElementsByClassName("BudgetItemRow-input BudgetItemRow-input--amountBudgeted input--inline--budget--sm no-wrap text--right")[0].attributes["value"].value.replace(/[^0-9.-]+/g, ''));
-            balances.planned += planned;
+    getAccountBalances();
+    const budgetItems = await SendRequest('https://api.everydollar.com/budget/budgets/442181ce-0b6e-4cc6-ae4d-d8fdcc85b0c5');
 
-            //Nonfund
-            if (expenseRemainingElements[ndx].getElementsByTagName("svg").length == 0) {
-                tempString = expenseRemainingElements[ndx].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value
-                tempCurr = parseFloat(expenseRemainingElements[ndx].getElementsByClassName("money BudgetItem-secondColumn money--remaining")[0].attributes["data-text"].value.replace(/[^0-9.-]+/g, ''));
-                balances.spentThisMonth -= (planned - tempCurr);
-                balances.nonFundRemaining += tempCurr;
-
-                nonFunds.push({"Name": tempString, "Amount": -planned});
-            } else {
-                //Fund
-                //Sum the fund balances
-                expenseRemainingElements[ndx].click();
-                document.getElementsByClassName("Expander-title")[1].click();
-
-                //Starting Balance
-                tempStartingBalance = document.evaluate('//div[text() = "Carryover Balance"]/parent::div/following-sibling::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                if (tempStartingBalance != "") {
-                    StartingBalance = parseFloat(tempStartingBalance.replace(/[^0-9.-]+/g, ''));
-                    balances.fundStarting += StartingBalance;
-
-                    //Spent this month
-                    //tempPlanned = document.evaluate('//div[text() = "Planned This Month"]/parent::div/following-sibling::div/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
-                    tempPlanned = expenseRemainingElements[ndx].getElementsByClassName("AmountBudgetedInputContainer")[0].childNodes[0].value;
-                    if (tempPlanned != "") {
-                        Planned = parseFloat(tempPlanned.replace(/[^0-9.-]+/g, ''));
-
-                        tempRemaining = document.evaluate('//*/div[@class="Allocations-footer"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;;
-                        if (tempRemaining != "") {
-                            remaining = parseFloat(tempRemaining.replace(/[^0-9.-]+/g, ''));
-
-                            balances.spentThisMonth -= StartingBalance - remaining + Planned;
-                        }
-                    }
-                }
+    budgetItems._embedded["budget-group"].forEach(group => {
+        group._embedded["budget-item"].forEach(budgetItem => {
+            if (budgetItem.type == "income") {
+                allPromises += getIncomeDetails(budgetItem);
+            } else if (budgetItem.type == "expense") {
+                allPromises += getExpenseDetails(budgetItem);
+            } else if (budgetItem.type == "sinking_fund") {
+                allPromises += getFundDetails(budgetItem);
+            } else if (budgetItem.type == "debt") {
+                allPromises += getDebtDetails(budgetItem);
             }
-            CloseCard()
-        }
-    }
-
-    //Add the debt items as well, their formatting is weird so I have to do math
-    var debtGroup = document.getElementsByClassName("Budget-budgetGroup Budget-budgetGroup--debt");
-    for (var debt = 0; debt < debtGroup.length; debt++) {
-        debtRows = debtGroup[debt].getElementsByClassName("BudgetItemRow");
-        for (var row = 0; row < debtRows.length; row++) {
-            tempString = debtRows[row].getElementsByClassName("BudgetItem-label")[0].attributes["data-text"].value;
-            budgeted = parseFloat(debtRows[row].getElementsByClassName("input--inline--budget--sm no-wrap text--right")[0].value.replace(/[^0-9.-]+/g, ''));
-            paidOff = parseFloat(debtRows[row].getElementsByClassName("money BudgetItem-secondColumn")[0].getAttribute("data-text").replace(/[^0-9.-]+/g, ''));
-            balances.planned += budgeted;
-            balances.spentThisMonth -= paidOff;
-            balances.nonFundRemaining += budgeted - paidOff;
-
-            debtPayments.push({"Name": tempString, "Amount": -budgeted});
-        }
-    }
-
-    //Get the total of untracked transactions
-    document.evaluate('//button[@data-testid="OperationsPanelTriggerTransactions"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click()
-    //document.getElementById("IconTray_transactions").click();
-    document.getElementById("unallocated").click();
-    var unTrackedIterator = document.evaluate('//div[contains(@class, "ui-item--card TransactionCard TransactionCard-unallocated")]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-    var unTracked = unTrackedIterator.iterateNext();
-    while (unTracked) {
-        balances.unTrackedBalance += parseFloat(unTracked.value.replace(/[^0-9.-]+/g, ''));
-        unTracked = unTrackedIterator.iterateNext();
-    }
-
-    /* Not working because not all the transactions load
-    //Get all tracked transactions
-    document.getElementById("allocated").click()
-    //setTimeout(getTracked, 1000);
-    var trackedIterator = document.evaluate('//div[@class="ui-item--card transaction-card transaction-card--allocated"]//div[div/div/span="' + currentMonth + '"]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
-    var tracked = trackedIterator.iterateNext();
-    while (tracked) {
-        balances.tracked += parseFloat(tracked.value.replace(/[^0-9.-]+/g, ''));
-        tracked = trackedIterator.iterateNext();
-    }
-    */
-    
-    CloseCard()
-
-    balances.remainingBalance = balances.fundStarting + balances.receivedIncome + balances.spentThisMonth + balances.unTrackedBalance;
-
-    balances.fundStarting = parseFloat(balances.fundStarting.toFixed(2));
-    balances.receivedIncome = parseFloat(balances.receivedIncome.toFixed(2));
-    balances.spentThisMonth = parseFloat((balances.spentThisMonth).toFixed(2));
-    balances.unTrackedBalance = parseFloat(balances.unTrackedBalance.toFixed(2));
-    balances.remainingBalance = parseFloat(balances.remainingBalance.toFixed(2));
-
-    balances.planned = parseFloat(balances.planned.toFixed(2));
-    balances.bankBalance = getAccountBalance();
-    balances.nonFundRemaining = parseFloat(balances.nonFundRemaining.toFixed(2));
+        });
+    });
 }
 
 function getTracked() {
@@ -303,7 +232,7 @@ function getTracked() {
 
 //Converts a number to a currency formatted string
 function convertToCurrency(content) {
-    return "$" + content.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
+    return "$" + content.replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
 }
 
 //Inserts htmlObject at the appropriate location on the page
@@ -354,31 +283,96 @@ function startSpinner(target) {
     target.replaceChild(spinner.el, target.firstChild);
 }
 
-//Gets the first account balance
-function getAccountBalance() {
-    document.evaluate('//button[@data-testid="OperationsPanelTriggerAccounts"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click()
+function getCurrentBudget() {
+    SendRequest('https://api.everydollar.com/budget/budgets?current=true');
 
-    var fltBalance = parseFloat(document.evaluate('//div[@class="BankAccount-balance"]/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue.replace(/[^0-9.-]+/g, ''));
+}
 
-    var closeButton = document.evaluate('//button[@class="close"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
-    if (closeButton) {closeButton.click()}
+async function getIncomeDetails(budgetItem) {
+    budgetItem._embedded.allocation.forEach(allocation => {
+        balances.receivedIncome += allocation.amount.usd;
+    });
 
-    return fltBalance;
+    incomePayments.push({"Name": budgetItem.Label, "Amount": budgetItem.amount_budgeted / 100});
+}
+
+async function getExpenseDetails(budgetItem) {
+    var spentThisMonth = 0;
+
+    const planned = budgetItem.amount_budgeted.usd;
+    balances.planned += planned;
+
+    budgetItem._embedded.allocation.forEach(allocation => {
+        spentThisMonth += allocation.amount.usd;
+    });
+
+    balances.spentThisMonth += spentThisMonth;
+    balances.nonFundRemaining += planned + spentThisMonth;
+    nonFunds.push({"Name": budgetItem.label, "Amount": -planned / 100});
+}
+
+async function getFundDetails(budgetItem) {
+    var spentThisMonth = 0;
+
+    const planned = budgetItem.amount_budgeted.usd;
+    balances.planned += planned;
+    balances.fundStarting += budgetItem.starting_balance.usd;
+
+    budgetItem._embedded.allocation.forEach(allocation => {
+        spentThisMonth += allocation.amount.usd;
+    });
+
+    balances.spentThisMonth += spentThisMonth;
+}
+
+async function getDebtDetails(budgetItem) {
+    var spentThisMonth = 0;
+
+    const planned = budgetItem.amount_budgeted.usd;
+    balances.planned += planned;
+
+    budgetItem._embedded.allocation.forEach(allocation => {
+        spentThisMonth += allocation.amount.usd;
+    });
+
+    balances.spentThisMonth += spentThisMonth;
+    balances.nonFundRemaining += planned + spentThisMonth;
+    debtPayments.push({"Name": budgetItem.label, "Amount": -planned / 100});
+}
+
+async function getAccountBalances() {
+    const accounts = await SendRequest('https://www.everydollar.com/app/api/accounts');
+    accounts.forEach(element => {
+        element.accounts.forEach(account => {
+            allAccounts.set(element.name.concat(account.name), account.balance);
+        });
+    });
+
+    balances.bankBalance = allAccounts.get(accountName);
+}
+
+//Get the list of institutions
+function getInstitutions() {
+    var institutionList = document.getElementsByClassName("InstitutionLogin-name");
+    
+    institutions = [];
+    for (var institution = 0; institution < institutionList.length; institution++) {
+        institutions.push(institutionList[institution].innerText);
+    }
 }
 
 //Updates the balances
-function updateBalances() {
+async function updateBalances() {
     var valElements = document.getElementsByClassName("modal-body");
-    //var valElements = document.getElementsByClassName("BankAccount-balance");
+    var valElements = document.getElementsByClassName("BankAccount-balance");
     for (var ndx = 0; ndx < valElements.length; ndx++) {
         startSpinner(valElements[ndx]);
     }
 
-    setTimeout(function() {
-        closeModal();
-        getRemaining(balances);
-        displayModal();
-    }, 0);
+    await updateReconcile();
+    
+    closeModal();
+    displayModal();
 }
 
 //Closes the modal window
@@ -389,23 +383,34 @@ function closeModal() {
     }
 }
 
+function getDigits(number) {
+    return number.toString().slice(0,-2);
+}
+
+function getDec(number) {
+    return number.toString().slice(-2);
+}
+
 //Displays the modal window with balance information
 function displayModal() {
     var strClass;
     var strSign;
-    if (balances.bankBalance == (balances.remainingBalance).toFixed(2)) {
+ 
+    balances.remainingBalance = balances.fundStarting + balances.receivedIncome + balances.spentThisMonth + balances.unTrackedBalance;
+
+    if (balances.bankBalance == balances.remainingBalance) {
         strClass = " money--remaining";
     } else {
         strClass = " money--danger";
     }
     modalNode = document.createElement("div");
     modalNode.innerHTML = strModal.format(
-        Math.trunc(balances.bankBalance), balances.bankBalance.toFixed(2).slice(-2),
-        strClass, balances.remainingBalance < 0 ? "-" : "", Math.trunc(Math.abs(balances.remainingBalance)), balances.remainingBalance.toFixed(2).slice(-2),
-        "", balances.fundStarting < 0 ? "-" : "", Math.trunc(Math.abs(balances.fundStarting)), balances.fundStarting.toFixed(2).slice(-2),
-        "", balances.receivedIncome < 0 ? "-" : "", Math.trunc(Math.abs(balances.receivedIncome)), balances.receivedIncome.toFixed(2).slice(-2),
-        "", balances.spentThisMonth < 0 ? "-" : "", Math.trunc(Math.abs(balances.spentThisMonth)), balances.spentThisMonth.toFixed(2).slice(-2),
-        Math.trunc(balances.nonFundRemaining), balances.nonFundRemaining.toFixed(2).slice(-2)
+        getDigits(balances.bankBalance), getDec(balances.bankBalance),
+        strClass, balances.remainingBalance < 0 ? "-" : "", Math.abs(getDigits(balances.remainingBalance)), getDec(balances.remainingBalance),
+        "", balances.fundStarting < 0 ? "-" : "", Math.abs(getDigits(balances.fundStarting)), getDec(balances.fundStarting),
+        "", balances.receivedIncome < 0 ? "-" : "", Math.abs(getDigits(balances.receivedIncome)), getDec(balances.receivedIncome),
+        "", balances.spentThisMonth < 0 ? "-" : "", Math.abs(getDigits(balances.spentThisMonth)), getDec(balances.spentThisMonth),
+        getDigits(balances.nonFundRemaining), getDec(balances.nonFundRemaining)
     );
 
     var reactNode = document.getElementsByClassName("ReactModalPortal")[0];
@@ -439,12 +444,12 @@ function displayModal() {
 
 //Adds the plugin button to the top of the page
 function insertButton() {
-    if (!pluginButton) {
+    if (!reconcileButton) {
         // Reconcile Button
-        pluginButton = document.createElement("div");
-        pluginButton.classList.add("OperationsPanelTabItem");
-        pluginButton.innerHTML = strReconcileButton;
-        pluginButton.addEventListener("click", displayModal);
+        reconcileButton = document.createElement("div");
+        reconcileButton.classList.add("OperationsPanelTabItem");
+        reconcileButton.innerHTML = strReconcileButton;
+        reconcileButton.addEventListener("click", displayModal);
 
         // Daily Balance Button
         dailyButton = document.createElement("div");
@@ -453,17 +458,30 @@ function insertButton() {
         dailyButton.addEventListener("click", displayDailyBalance);
 
         parentNode = document.getElementsByClassName("OperationsPanelHeader")[0];
-        parentNode.appendChild(pluginButton);
+        parentNode.appendChild(reconcileButton);
         parentNode.appendChild(dailyButton);
     }
 }
 
-var pluginButton;
+function getUserInfo() {
+    const userIdRegex = RegExp('(?<="userId":")[^"]*');
+    const userTokenRegex = RegExp('(?<="userToken":")[^"]*');
+    const uuidRegex = RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+
+    const userData = document.evaluate('//script[contains(text(),"window.userData")]', document, null, XPathResult.STRING_TYPE, null).stringValue;
+    userId = userIdRegex.exec(userData)[0];
+    authHeader = "Bearer {0}".format(userTokenRegex.exec(userData)[0]);
+
+    const budgetData = document.evaluate('//div[contains(@data-testid, "BudgetItemRow")]/@data-testid', document, null, XPathResult.STRING_TYPE, null).stringValue;    
+    UUID = uuidRegex.exec(budgetData)[0];
+}
 
 //Main function is called on page load or button click
 function main(evt) {
+    getUserInfo();
+    getAccountBalances();
+    updateReconcile();
     insertButton();
-    setTimeout(getRemaining(balances), 0);
 }
 
 //Event is fired when the page is finished loading
@@ -477,8 +495,8 @@ var checkExist = setInterval(function() {
 
         //The button is removed when the month is changed so recreate it
         var observer = new MutationObserver(function(mutations) {
-            if (!document.body.contains(pluginButton) && document.body.contains(accountIcon[0])) {
-                pluginButton = null;
+            if (!document.body.contains(reconcileButton) && document.body.contains(accountIcon[0])) {
+                reconcileButton = null;
                 main();
             }
         });

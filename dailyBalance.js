@@ -229,7 +229,7 @@ function displayDailyBalance() {
     payments.classList.add("InstitutionLogin-children");
 
     allPayments.sort(byDate);
-    runningTotal = balances.remainingBalance;
+    runningTotal = balances.remainingBalance / 100;
 
     allPayments.forEach(element => {
         if (element.Day < today.getUTCDate()) {
@@ -248,7 +248,7 @@ function displayDailyBalance() {
         payments.appendChild(row);
     });
 
-    modalNode.innerHTML = dailyBalanceModal.format(formatter.format(balances.remainingBalance));
+    modalNode.innerHTML = dailyBalanceModal.format(formatter.format(balances.remainingBalance / 100));
     modalNode.getElementsByClassName("modal-body")[0].appendChild(payments);
 
     reactNode = document.getElementsByClassName("ReactModalPortal")[0];
