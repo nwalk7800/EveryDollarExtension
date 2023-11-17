@@ -208,26 +208,30 @@ async function updateReconcile() {
     budgetItems._embedded["budget-group"].forEach(group => {
         group._embedded["budget-item"].forEach(budgetItem => {
             if (budgetItem.type == "income") {
-                allPromises += getIncomeDetails(budgetItem);
+                getIncomeDetails(budgetItem);
             } else if (budgetItem.type == "expense") {
-                allPromises += getExpenseDetails(budgetItem);
+                getExpenseDetails(budgetItem);
             } else if (budgetItem.type == "sinking_fund") {
-                allPromises += getFundDetails(budgetItem);
+                getFundDetails(budgetItem);
             } else if (budgetItem.type == "debt") {
-                allPromises += getDebtDetails(budgetItem);
+                getDebtDetails(budgetItem);
             }
         });
     });
+
+    await getUntracked();
 }
 
-function getTracked() {
-    var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
-    var trackedIterator = document.evaluate('//div[@class="ui-item--card transaction-card transaction-card--allocated"]//div[div/div/span="' + currentMonth + '"]//span[@class="money ui-flex--ellipsis"]/@data-text', document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null)
-    var tracked = trackedIterator.iterateNext();
-    while (tracked) {
-        balances.tracked += parseFloat(tracked.value.replace(/[^0-9.-]+/g, ''));
-        tracked = trackedIterator.iterateNext();
-    }
+async function getUntracked() {
+    const transactions = await SendRequest('https://api.everydollar.com/budget/transactions');
+
+    balances.unTrackedBalance = 0;
+
+    transactions._embedded.transaction.forEach(transaction => {
+        if (transaction._embedded.allocation.length == 0) {
+            balances.unTrackedBalance += transaction.amount.usd;
+        }
+    });
 }
 
 //Converts a number to a currency formatted string
