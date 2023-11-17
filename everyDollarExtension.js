@@ -191,10 +191,7 @@ async function updateReconcile() {
     nonFunds = [];
     debtPayments = [];
 
-
     var currentMonth = (new Date()).toLocaleString('default', { month: 'short' });
-
-    debugger;
 
     //Grab the amount left to budget from under the income card
     var unbudgetedString = document.evaluate('//div[@class="AmountBudgeted BudgetSummaryContainer-amount"]/span/span/@data-text', document, null, XPathResult.STRING_TYPE, null).stringValue;
@@ -202,6 +199,7 @@ async function updateReconcile() {
         unbudgeted = parseFloat(unbudgetedString.replace(/[^0-9.-]+/g, ''));
     }
 
+    getUserInfo();
     getAccountBalances();
     const budgetItems = await SendRequest('https://api.everydollar.com/budget/budgets/442181ce-0b6e-4cc6-ae4d-d8fdcc85b0c5');
 
