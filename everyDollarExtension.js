@@ -12,12 +12,26 @@ String.prototype.format = function() {
     return s;
 };
 
+String.prototype.trunc = function(){
+    var str = this;
+    var len = arguments[0];
+
+    var firstLen = Math.trunc(len / 2);
+    var lastLen = len - firstLen;
+
+    if (str.length > len) {
+        return str.substr(0, firstLen) + '...' + str.substr(-lastLen);
+    } else {
+        return str;
+    }
+};
+
 var reconcileButton;
 
 var UUID = "";
 var userId = "";
 var authHeader = "";
-var accountName = "Bank of AmericaAdv Plus Banking - 1598"
+var selectedAccount = ""
 
 var incomePayments = [];
 var nonFunds = [];
@@ -66,6 +80,8 @@ var strModal = `
                             <div class="BankAccount-name">
                                 Bank Balance
                                 <span class="BankAccount-expander"></span></div>
+                                <div id="ReconcileAccount">
+                                </div>
                                 <div class="BankAccount-balance"><span class="money undefined" data-text="{0}.{1}"><span class="money-symbol">$</span><span class="money-integer">{0}</span><span class="money-decimal">.</span><span class="money-fractional">{1}</span></span>
                             </div>
                         </div>
@@ -342,15 +358,31 @@ async function getDebtDetails(budgetItem) {
     debtPayments.push({"Name": budgetItem.label, "Amount": -planned / 100});
 }
 
+function setSelectedAccount() {
+    chrome.storage.sync.set({
+        selectedAccount: selectedAccount,
+    });
+}
+
+function getSelectedAccount() {
+    chrome.storage.sync.get('selectedAccount', (data) => {
+        selectedAccount = data.selectedAccount;
+    });
+}
+
 async function getAccountBalances() {
     const accounts = await SendRequest('https://www.everydollar.com/app/api/accounts');
     accounts.forEach(element => {
         element.accounts.forEach(account => {
-            allAccounts.set(element.name.concat(account.name), account.balance);
+            allAccounts.set("{0} {1}".format(element.name, account.name), account.balance);
         });
     });
 
-    balances.bankBalance = allAccounts.get(accountName);
+    if (allAccounts.has(selectedAccount)) {
+        balances.bankBalance = allAccounts.get(selectedAccount);
+    } else {
+        balances.bankBalance = allAccounts.entries().next().value[1]
+    }
 }
 
 //Get the list of institutions
@@ -386,18 +418,44 @@ function closeModal() {
 }
 
 function getDigits(number) {
-    return number.toString().slice(0,-2);
+    if (typeof number !== 'undefined') {
+        return number.toString().slice(0,-2);
+    }
 }
 
 function getDec(number) {
-    return number.toString().slice(-2);
+    if (typeof number !== 'undefined') {
+        return number.toString().slice(-2);
+    }
+}
+
+function createAccountSelect() {
+    // Add account options
+    var reconcileAccount = document.createElement('select')
+    allAccounts.forEach((accountBalance, accountName)=> {
+        optionNode = new Option(accountName.trunc(14), accountName);
+        reconcileAccount.appendChild(optionNode);
+    });
+
+    reconcileAccount.value = selectedAccount;
+
+    reconcileAccount.addEventListener("change", function() {
+        selectedAccount = this.value;
+        balances.bankBalance = allAccounts.get(selectedAccount);
+        setSelectedAccount();
+        closeModal();
+        displayModal();
+    });
+    
+    return reconcileAccount;
 }
 
 //Displays the modal window with balance information
 function displayModal() {
     var strClass;
     var strSign;
- 
+    var optionNode;
+
     balances.remainingBalance = balances.fundStarting + balances.receivedIncome + balances.spentThisMonth + balances.unTrackedBalance;
 
     if (balances.bankBalance == balances.remainingBalance) {
@@ -414,6 +472,8 @@ function displayModal() {
         "", balances.spentThisMonth < 0 ? "-" : "", Math.abs(getDigits(balances.spentThisMonth)), getDec(balances.spentThisMonth),
         getDigits(balances.nonFundRemaining), getDec(balances.nonFundRemaining)
     );
+
+    modalNode.querySelector('#ReconcileAccount').appendChild(createAccountSelect());
 
     var reactNode = document.getElementsByClassName("ReactModalPortal")[0];
     reactNode.appendChild(modalNode);
@@ -481,6 +541,7 @@ function getUserInfo() {
 //Main function is called on page load or button click
 function main(evt) {
     getUserInfo();
+    getSelectedAccount();
     getAccountBalances();
     updateReconcile();
     insertButton();

@@ -267,13 +267,11 @@ function displayDailyBalance() {
 function clear_click() {
     allPayments = [];
     displayDailyBalance();
-    //chrome.storage.sync.set({allPayments: allPayments});
 }
 
 // Saves options to chrome.storage
 function save() {
     allPayments.sort(byDate);
-    //displayDailyBalance();
 
     chrome.storage.sync.set({
         allPayments: allPayments,
