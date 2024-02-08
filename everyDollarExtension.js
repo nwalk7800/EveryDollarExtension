@@ -67,75 +67,90 @@ var strDailyBalanceButton = `
 
 var strModal = `
 <div data-reactroot="" class="ReactModal__Overlay ReactModal__Overlay--after-open Modal__Bootstrap Modal__Bootstrap--blue AccountsModal">
-<div class="ReactModal__Content ReactModal__Content--after-open modal-dialog" tabindex="-1" aria-label="Modal">
-    <div class="modal-content">
-        <div class="modal-header"><button id="Modal_close" type="button" class="close"><svg class="CloseIcon" viewBox="0 0 40 40"><path d="M23.54455,20l8.90253-8.85541a2.78386,2.78386,0,0,0,.35938-3.8833,2.8016,2.8016,0,0,0-3.89453.34814l-8.91187,8.86475L11.08813,7.60944a2.8016,2.8016,0,0,0-3.89453-.34814,2.78386,2.78386,0,0,0,.35938,3.8833L16.4555,20,7.553,28.85541a2.78378,2.78378,0,0,0-.35937,3.88324,2.80164,2.80164,0,0,0,3.89453-.34808l8.91193-8.86475,8.91187,8.86475a2.80164,2.80164,0,0,0,3.89453.34808,2.78378,2.78378,0,0,0-.35937-3.88324Z"></path></svg><span class="sr-only">Close</span></button>
-            <h4 class="modal-title"><span>Reconciliation Information</span><button id="modalRefreshButton" type="button" style="z-index:2;margin:0;outline:none;border:0;background:transparent;padding:0;text-transform:uppercase;font-size:2.8rem"><svg viewBox="0 0 32 32" width="20px" height="20px"><path d="M25.444,4.291c0,0-1.325,1.293-2.243,2.201C18.514,3.068,11.909,3.456,7.676,7.689   c-2.47,2.47-3.623,5.747-3.484,8.983h4C8.051,14.46,8.81,12.205,10.5,10.514c2.663-2.663,6.735-3.043,9.812-1.162   c-1.042,1.032-2.245,2.238-2.245,2.238c-0.841,1.009,0.104,1.592,0.584,1.577l5.624-0.001c0.297,0,0.539,0.001,0.539,0.001   s0.245,0,0.543,0h1.092c0.298,0,0.54-0.243,0.54-0.541V4.895C27.023,4.188,26.247,3.502,25.444,4.291z" fill="#ffffff"/><path d="M6.555,27.709c0,0,1.326-1.293,2.243-2.201c4.688,3.424,11.292,3.036,15.526-1.197   c2.47-2.471,3.622-5.747,3.484-8.983h-4.001c0.142,2.211-0.617,4.467-2.308,6.159c-2.663,2.662-6.735,3.043-9.812,1.161   c1.042-1.032,2.245-2.238,2.245-2.238c0.841-1.01-0.104-1.592-0.584-1.577l-5.624,0.002c-0.297,0-0.54-0.002-0.54-0.002   s-0.245,0-0.543,0H5.551c-0.298,0-0.54,0.242-0.541,0.541v7.732C4.977,27.812,5.753,28.498,6.555,27.709z" fill="#ffffff"/></svg></button></h4>
-        </div>
-        <div class="modal-body">
-            <div>
-                <div class="InstitutionLogin-children">
-                    <div class="BankAccount">
-                        <div class="BankAccount-descriptionLine">
-                            <div class="BankAccount-name">
-                                Bank Balance
-                                <span class="BankAccount-expander"></span></div>
-                                <div id="ReconcileAccount">
-                                </div>
-                                <div class="BankAccount-balance"><span class="money undefined" data-text="{0}.{1}"><span class="money-symbol">$</span><span class="money-integer">{0}</span><span class="money-decimal">.</span><span class="money-fractional">{1}</span></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="BankAccount">
-                        <div class="BankAccount-descriptionLine collapsible">
-                            <div class="BankAccount-name">EveryDollar Balance<span class="BankAccount-expander"><svg class="icon icon--chevron icon--inline small" viewBox="0 0 40 40"><path id="ReconcileCollapse" d="M22.1374,28.03471a3.1012,3.1012,0,0,1-4.29536-.00148L5.14816,15.64438a2.79272,2.79272,0,0,1-.40086-3.88443,2.79274,2.79274,0,0,1,3.893.30632L17.844,21.04885c1.94327,2.06586,2.882,1.41479,4.29533.00147l9.22081-8.987a2.79286,2.79286,0,0,1,3.8935-.30338,2.79284,2.79284,0,0,1-.40329,3.88441Z"></path></svg></span></div>
-                            <div class="BankAccount-balance"><span class="money undefined{2}" data-text="{4}.{5}"><span class="money-sign">{3}</span><span class="money-symbol">$</span><span class="money-integer">{4}</span><span class="money-decimal">.</span><span class="money-fractional">{5}</span></span></div>
-                        </div>
-                        <div style="display:none">
-                        <div class="BankAccount"></div>
-                        <div class="BankAccount">
-                            <div class="BankAccount-descriptionLine">
-                                <div class="BankAccount-name">
-                                    Starting Balance
-                                    <span class="BankAccount-expander"></span></div>
-                                    <div class="BankAccount-balance"><span class="money undefined{6}" data-text="{8}.{9}"><span class="money-sign">{7}</span><span class="money-symbol">$</span><span class="money-integer">{8}</span><span class="money-decimal">.</span><span class="money-fractional">{9}</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="BankAccount">
-                            <div class="BankAccount-descriptionLine">
-                                <div class="BankAccount-name">
-                                    Total Income
-                                    <span class="BankAccount-expander"></span></div>
-                                    <div class="BankAccount-balance"><span class="money undefined{10}" data-text="{12}.{13}"><span class="money-sign">{11}</span><span class="money-symbol">$</span><span class="money-integer">{12}</span><span class="money-decimal">.</span><span class="money-fractional">{13}</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="BankAccount">
-                            <div class="BankAccount-descriptionLine">
-                                <div class="BankAccount-name">
-                                    Total Spent
-                                    <span class="BankAccount-expander"></span></div>
-                                    <div class="BankAccount-balance"><span class="money undefined{14}" data-text="{16}.{17}"><span class="money-sign">{15}</span><span class="money-symbol">$</span><span class="money-integer">{16}</span><span class="money-decimal">.</span><span class="money-fractional">{17}</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="BankAccount">
-                            <div class="BankAccount-descriptionLine">
-                                <div class="BankAccount-name">
-                                    Remaining Budget
-                                    <span class="BankAccount-expander"></span></div>
-                                    <div class="BankAccount-balance"><span class="money undefined" data-text="{18}.{19}"><span class="money-symbol">$</span><span class="money-integer">{18}</span><span class="money-decimal">.</span><span class="money-fractional">{19}</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+	<div class="ReactModal__Content ReactModal__Content--after-open modal-dialog" tabindex="-1" aria-label="Modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button id="Modal_close" type="button" class="close">
+					<svg class="CloseIcon" viewBox="0 0 40 40">
+						<path d="M23.54455,20l8.90253-8.85541a2.78386,2.78386,0,0,0,.35938-3.8833,2.8016,2.8016,0,0,0-3.89453.34814l-8.91187,8.86475L11.08813,7.60944a2.8016,2.8016,0,0,0-3.89453-.34814,2.78386,2.78386,0,0,0,.35938,3.8833L16.4555,20,7.553,28.85541a2.78378,2.78378,0,0,0-.35937,3.88324,2.80164,2.80164,0,0,0,3.89453-.34808l8.91193-8.86475,8.91187,8.86475a2.80164,2.80164,0,0,0,3.89453.34808,2.78378,2.78378,0,0,0-.35937-3.88324Z"></path>
+					</svg> <span class="sr-only">Close</span> </button>
+				<h4 class="modal-title">
+					<span>Reconciliation Information</span>
+					<button id="modalRefreshButton" type="button" style="z-index:2;margin:0;outline:none;border:0;background:transparent;padding:0;text-transform:uppercase;font-size:2.8rem">
+						<svg viewBox="0 0 32 32" width="20px" height="20px">
+							<path d="M25.444,4.291c0,0-1.325,1.293-2.243,2.201C18.514,3.068,11.909,3.456,7.676,7.689   c-2.47,2.47-3.623,5.747-3.484,8.983h4C8.051,14.46,8.81,12.205,10.5,10.514c2.663-2.663,6.735-3.043,9.812-1.162   c-1.042,1.032-2.245,2.238-2.245,2.238c-0.841,1.009,0.104,1.592,0.584,1.577l5.624-0.001c0.297,0,0.539,0.001,0.539,0.001   s0.245,0,0.543,0h1.092c0.298,0,0.54-0.243,0.54-0.541V4.895C27.023,4.188,26.247,3.502,25.444,4.291z" fill="#ffffff" />
+							<path d="M6.555,27.709c0,0,1.326-1.293,2.243-2.201c4.688,3.424,11.292,3.036,15.526-1.197   c2.47-2.471,3.622-5.747,3.484-8.983h-4.001c0.142,2.211-0.617,4.467-2.308,6.159c-2.663,2.662-6.735,3.043-9.812,1.161   c1.042-1.032,2.245-2.238,2.245-2.238c0.841-1.01-0.104-1.592-0.584-1.577l-5.624,0.002c-0.297,0-0.54-0.002-0.54-0.002   s-0.245,0-0.543,0H5.551c-0.298,0-0.54,0.242-0.541,0.541v7.732C4.977,27.812,5.753,28.498,6.555,27.709z" fill="#ffffff" />
+						</svg>
+					</button>
+				</h4> </div>
+			<div class="modal-body">
+				<div>
+					<div class="InstitutionLogin-children">
+						<div class="BankAccount">
+							<div class="BankAccount-descriptionLine">
+								<div class="BankAccount-name"> Bank Account </div>
+								<div id="ReconcileAccount" /> </div>
+						</div>
+						<div class="BankAccount">
+							<div class="BankAccount-descriptionLine">
+								<div class="BankAccount-name"> Bank Balance <span class="BankAccount-expander" /> </div>
+								<div class="BankAccount-balance"> <span class="money undefined" data-text="{0}.{1}">
+										<span class="money-symbol">$</span> <span class="money-integer">{0}</span> <span class="money-decimal">.</span> <span class="money-fractional">{1}</span> </span>
+								</div>
+							</div>
+						</div>
+						<div class="BankAccount">
+							<div class="BankAccount-descriptionLine collapsible">
+								<div class="BankAccount-name">EveryDollar Balance <span class="BankAccount-expander">
+										<svg class="icon icon--chevron icon--inline small" viewBox="0 0 40 40">
+											<path id="ReconcileCollapse" d="M22.1374,28.03471a3.1012,3.1012,0,0,1-4.29536-.00148L5.14816,15.64438a2.79272,2.79272,0,0,1-.40086-3.88443,2.79274,2.79274,0,0,1,3.893.30632L17.844,21.04885c1.94327,2.06586,2.882,1.41479,4.29533.00147l9.22081-8.987a2.79286,2.79286,0,0,1,3.8935-.30338,2.79284,2.79284,0,0,1-.40329,3.88441Z"></path>
+										</svg>
+									</span> </div>
+								<div class="BankAccount-balance"> <span class="money undefined{2}" data-text="{4}.{5}">
+										<span class="money-sign">{3}</span> <span class="money-symbol">$</span> <span class="money-integer">{4}</span> <span class="money-decimal">.</span> <span class="money-fractional">{5}</span> </span>
+								</div>
+							</div>
+							<div style="display:none">
+								<div class="BankAccount"></div>
+								<div class="BankAccount">
+									<div class="BankAccount-descriptionLine">
+										<div class="BankAccount-name"> Starting Balance <span class="BankAccount-expander"></span> </div>
+										<div class="BankAccount-balance"> <span class="money undefined{6}" data-text="{8}.{9}">
+												<span class="money-sign">{7}</span> <span class="money-symbol">$</span> <span class="money-integer">{8}</span> <span class="money-decimal">.</span> <span class="money-fractional">{9}</span> </span>
+										</div>
+									</div>
+								</div>
+								<div class="BankAccount">
+									<div class="BankAccount-descriptionLine">
+										<div class="BankAccount-name"> Total Income <span class="BankAccount-expander"></span> </div>
+										<div class="BankAccount-balance"> <span class="money undefined{10}" data-text="{12}.{13}">
+												<span class="money-sign">{11}</span> <span class="money-symbol">$</span> <span class="money-integer">{12}</span> <span class="money-decimal">.</span> <span class="money-fractional">{13}</span> </span>
+										</div>
+									</div>
+								</div>
+								<div class="BankAccount">
+									<div class="BankAccount-descriptionLine">
+										<div class="BankAccount-name"> Total Spent <span class="BankAccount-expander"></span> </div>
+										<div class="BankAccount-balance"> <span class="money undefined{14}" data-text="{16}.{17}">
+												<span class="money-sign">{15}</span> <span class="money-symbol">$</span> <span class="money-integer">{16}</span> <span class="money-decimal">.</span> <span class="money-fractional">{17}</span> </span>
+										</div>
+									</div>
+								</div>
+								<div class="BankAccount">
+									<div class="BankAccount-descriptionLine">
+										<div class="BankAccount-name"> Remaining Budget <span class="BankAccount-expander"></span> </div>
+										<div class="BankAccount-balance"> <span class="money undefined" data-text="{18}.{19}">
+												<span class="money-symbol">$</span> <span class="money-integer">{18}</span> <span class="money-decimal">.</span> <span class="money-fractional">{19}</span> </span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 `;
 var balances = {
@@ -217,7 +232,7 @@ async function updateReconcile() {
 
     getUserInfo();
     getAccountBalances();
-    const budgetItems = await SendRequest('https://api.everydollar.com/budget/budgets/442181ce-0b6e-4cc6-ae4d-d8fdcc85b0c5');
+    const budgetItems = await SendRequest('https://api.everydollar.com/budget/budgets/{0}'.format(UUID));
 
     budgetItems._embedded["budget-group"].forEach(group => {
         group._embedded["budget-item"].forEach(budgetItem => {
@@ -433,7 +448,7 @@ function createAccountSelect() {
     // Add account options
     var reconcileAccount = document.createElement('select')
     allAccounts.forEach((accountBalance, accountName)=> {
-        optionNode = new Option(accountName.trunc(14), accountName);
+        optionNode = new Option(accountName.trunc(30), accountName);
         reconcileAccount.appendChild(optionNode);
     });
 
