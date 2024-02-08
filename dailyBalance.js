@@ -1,6 +1,5 @@
 // TODO:
 
-var today = new Date();
 var startingBalance = 0;
 var currentBalance = 0;
 var allPayments = [];

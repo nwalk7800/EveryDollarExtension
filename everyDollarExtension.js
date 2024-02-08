@@ -38,6 +38,9 @@ var nonFunds = [];
 var debtPayments = [];
 var allAccounts = new Map();
 
+const today = new Date();
+const timezoneOffset = today.getTimezoneOffset() * 60000;
+
 var allPromises = [];
 
 var toType = function(obj) {
@@ -323,7 +326,10 @@ function getCurrentBudget() {
 
 async function getIncomeDetails(budgetItem) {
     budgetItem._embedded.allocation.forEach(allocation => {
-        balances.receivedIncome += allocation.amount.usd;
+        const transDate = new Date (new Date(allocation.date).getTime() + timezoneOffset)
+        if (transDate.getMonth() == today.getMonth()) {
+            balances.receivedIncome += allocation.amount.usd;
+        }
     });
 
     incomePayments.push({"Name": budgetItem.Label, "Amount": budgetItem.amount_budgeted / 100});
@@ -336,7 +342,10 @@ async function getExpenseDetails(budgetItem) {
     balances.planned += planned;
 
     budgetItem._embedded.allocation.forEach(allocation => {
-        spentThisMonth += allocation.amount.usd;
+        const transDate = new Date (new Date(allocation.date).getTime() + timezoneOffset)
+        if (transDate.getMonth() == today.getMonth()) {
+            spentThisMonth += allocation.amount.usd;
+        }
     });
 
     balances.spentThisMonth += spentThisMonth;
