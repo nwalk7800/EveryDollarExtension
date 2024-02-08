@@ -248,7 +248,7 @@ function displayDailyBalance() {
         payments.appendChild(row);
     });
 
-    modalNode.innerHTML = dailyBalanceModal.format(formatter.format(balances.remainingBalance / 100));
+    modalNode.innerHTML = dailyBalanceModal.format(formatter.format(balances.bankBalance / 100));
     modalNode.getElementsByClassName("modal-body")[0].appendChild(payments);
 
     reactNode = document.getElementsByClassName("ReactModalPortal")[0];
