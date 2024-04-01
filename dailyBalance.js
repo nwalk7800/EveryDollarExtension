@@ -228,7 +228,7 @@ function displayDailyBalance() {
     payments.classList.add("InstitutionLogin-children");
 
     allPayments.sort(byDate);
-    runningTotal = balances.remainingBalance / 100;
+    runningTotal = balances.bankBalance / 100;
 
     allPayments.forEach(element => {
         if (element.Day < today.getUTCDate()) {
